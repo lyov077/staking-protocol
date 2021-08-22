@@ -65,6 +65,9 @@ module.exports = {
     caller: {
       default: 1,
 
+    },
+    user: {
+      default: 2,
     }
   },
   etherscan: {
