@@ -68,7 +68,8 @@ contract Staking is Ownable {
     function _claim() private {
         //hashvi u ta rewardnery u rewardDebt hashvi
         UserInfo storage user = userInfo[msg.sender];
-        uint256 pending = (user.amount * accRewardPerShare) / 1e12 -
+        uint256 pending = (user.amount * accRewardPerShare) /
+            1e12 -
             user.rewardDebt;
         _safeTransferReward(msg.sender, pending);
         emit Claim(msg.sender, pending);

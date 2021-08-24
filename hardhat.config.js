@@ -66,7 +66,7 @@ module.exports = {
       default: 1,
 
     },
-    user: {
+    staker: {
       default: 2,
     }
   },

@@ -1,25 +1,27 @@
+
 const {
     expect
 } = require("chai");
 const {
-    ethers, web3
-} = require("hardhat");
-const {
+    ethers,
     deployments
 } = require("hardhat");
 
+
+
 describe("Staking contract: ", function () {
-    let staking, accounts, token;
-    const rewardPerBlock = 5
+    const rewardPerBlock = ethers.utils.parseEther("1");
+    let staking, token, accounts;
     before("Before: ", async () => {
         accounts = await ethers.getNamedSigners()
-        tx = await deployments.deploy("ClassToken", {
+
+        await deployments.deploy("ClassToken", {
             from: accounts.deployer.address,
-            log: false,
-        });
-        token = await ethers.getContract("ClassToken", accounts.deployer.caller);
-        // const Staking = await ethers.getContractFactory("Staking")
-        // staking = await Staking.deploy(token.address, rewardPerBlock)
+            log: false
+        })
+
+        token = await ethers.getContract("ClassToken");
+
         tx = await deployments.deploy("Staking", {
             from: accounts.deployer.address,
             args: [token.address, rewardPerBlock]
@@ -27,134 +29,183 @@ describe("Staking contract: ", function () {
 
         staking = await ethers.getContract("Staking");
 
+        await token.transfer(accounts.caller.address, ethers.utils.parseEther("100000"))
+        await token.transfer(accounts.staker.address, ethers.utils.parseEther("100000"))
+        await token.approve(staking.address, ethers.constants.MaxUint256)
+        await token.connect(accounts.staker).approve(staking.address, ethers.constants.MaxUint256)
+        await token.connect(accounts.caller).approve(staking.address, ethers.constants.MaxUint256)
     })
-    describe("Initialization...", async () => {
-        it("", async () => {
+
+    describe("Initialization", async () => {
+        it("Should initialize contract with correct values: ", async () => {
             expect(await staking.stakedToken()).to.equal(token.address);
             expect(await staking.rewardPerBlock()).to.equal(rewardPerBlock);
         })
-        describe("distributeReward function: ", async () => {
-            it("Shouldn't update state if block number less than last reward block", async () => { })
-            // let currentBlock = await ethers.provider.getBlockNumber();
-            // console.log('currentBlock is: ', currentBlock + "\n")
-            it("Should update lastRewardBlock to block.number", async () => {
-                const lastRewardBlock1 = await staking.lastRewardBlock()
-                console.log("lastRewardBlock :", lastRewardBlock1.toString())
-                const currentBlock1 = await ethers.provider.getBlockNumber();
-                console.log('currentBlock is: ', currentBlock1 + "\n")
-                let snapshotStart = await ethers.provider.send("evm_snapshot", [])
-
-                // for (let i = await ethers.provider.getBlockNumber(); i < 20; i++) {
-                //     await ethers.provider.send("evm_mine", [])
-                // }
-                expect(await staking.totalStaked()).to.equal(0);
-                await staking.distributeReward()
-                expect(await staking.lastRewardBlock()).to.equal(await ethers.provider.getBlockNumber())
-                // const lastRewardBlock2 = await staking.lastRewardBlock()
-                // console.log("lastRewardBlock is: after distribute", lastRewardBlock2.toString())
-                // const currentBlock2 = await ethers.provider.getBlockNumber();
-                // console.log('currentBlock is: after distribute', currentBlock2 + "\n")
-
-                // await ethers.provider.send("evm_revert", [snapshotStart])
-
-                // const lastRewardBlock3 = await staking.lastRewardBlock()
-                // console.log('lastRewardBlock is: after revert', lastRewardBlock3.toString())
-                // const currentBlock3 = await ethers.provider.getBlockNumber();
-                // console.log('currentBlock is: after revert', currentBlock3)
-
-                // await staking.distributeReward()
-                // expect(lastRewardBlock2).to.equal(3)
-
-                // await staking.distributeReward()
-                // await staking.distributeReward()
-                // expect(lastRewardBlock2).to.equal(3)
-            })
-        })
-        describe("Stake: ", async () => {
-            it("Should ", async () => {
-                //caller accountin uni 12 eth, voric contractin approve araca 3 eth,
-                k = 10
-                await token.connect(accounts.deployer).transfer(accounts.caller.address, ethers.utils.parseEther("12"))
-                await token.connect(accounts.caller).approve(staking.address, ethers.utils.parseEther("3"))
-
-                //arajin stake 1 eth
-                await staking.connect(accounts.caller).stake(5)
-
-                userInfos = await staking.userInfo(accounts.caller.address);
-                accRewardPerShare = await staking.accRewardPerShare();
-                total = await staking.totalStaked()
-                console.log("amount:", userInfos[0].toString())
-                console.log("rewardDebt:", userInfos[1].toString())
-                console.log("accRewardPerShare:", accRewardPerShare.toString())
-                console.log("total:", total.toString() + "\n")
-                console.log("*******************************************************************")
-                currentBlockGetReward = await ethers.provider.getBlockNumber();
-                console.log("currentBlockGetReward before: ", currentBlockGetReward.toString())
-                lastRewardBlockGetReward = await staking.lastRewardBlock();
-                console.log("lastRewardBlockGetReward before: ", lastRewardBlockGetReward.toString())
-
-                for (let i = await ethers.provider.getBlockNumber(); i < k; i++) {
-                    await ethers.provider.send("evm_mine", [])
-                }
-                k += 4
-                currentBlockGetReward = await ethers.provider.getBlockNumber();
-                console.log("currentBlockGetReward after: ", currentBlockGetReward.toString())
-                lastRewardBlockGetReward = await staking.lastRewardBlock();
-                console.log("lastRewardBlockGetReward after: ", lastRewardBlockGetReward.toString() + "\n")
-
-                await staking.connect(accounts.caller).stake(5)
-
-                userInfos = await staking.userInfo(accounts.caller.address);
-                accRewardPerShare = await staking.accRewardPerShare();
-                total = await staking.totalStaked()
-                console.log("amount:", userInfos[0].toString())
-                console.log("rewardDebt:", userInfos[1].toString())
-                console.log("accRewardPerShare:", accRewardPerShare.toString())
-                console.log("total:", total.toString() + "\n")
-                console.log("*******************************************************************")
-                currentBlockGetReward = await ethers.provider.getBlockNumber();
-                console.log("currentBlockGetReward before: ", currentBlockGetReward.toString())
-                lastRewardBlockGetReward = await staking.lastRewardBlock();
-                console.log("lastRewardBlockGetReward before: ", lastRewardBlockGetReward.toString())
-
-                for (let i = await ethers.provider.getBlockNumber(); i < k; i++) {
-                    await ethers.provider.send("evm_mine", [])
-                }
-                k += 4
-                currentBlockGetReward = await ethers.provider.getBlockNumber();
-                console.log("currentBlockGetReward after: ", currentBlockGetReward.toString())
-                lastRewardBlockGetReward = await staking.lastRewardBlock();
-                console.log("lastRewardBlockGetReward after: ", lastRewardBlockGetReward.toString() + "\n")
-                await staking.connect(accounts.caller).stake(5)
-
-                userInfos = await staking.userInfo(accounts.caller.address);
-                accRewardPerShare = await staking.accRewardPerShare();
-                total = await staking.totalStaked()
-                console.log("amount:", userInfos[0].toString())
-                console.log("rewardDebt:", userInfos[1].toString())
-                console.log("accRewardPerShare:", accRewardPerShare.toString())
-                console.log("total:", total.toString() + "\n")
-                console.log("*******************************************************************")
-            })
-        })
-        describe("GetReward function", async () => {
-            it("Should give reward ", async () => {
-                let snapshotStart = await ethers.provider.send("evm_snapshot", [])
-                currentBlockGetReward = await ethers.provider.getBlockNumber();
-                console.log("🚀 ~ file: staking.test.js ~ line 98 ~ it ~ currentBlockGetReward", currentBlockGetReward.toString())
-                for (let i = await ethers.provider.getBlockNumber(); i < 20; i++) {
-                    await ethers.provider.send("evm_mine", [])
-                }
-                currentBlockGetReward = await ethers.provider.getBlockNumber();
-                lastRewardBlockGetReward = await staking.lastRewardBlock();
-                result = (currentBlockGetReward - lastRewardBlockGetReward) * rewardPerBlock
-                expect(await staking.getReward(lastRewardBlockGetReward, currentBlockGetReward)).to.equal(result)
-                await ethers.provider.send("evm_revert", [snapshotStart])
-
-            })
-        })
-
     })
 
+    describe("distributeReward function: ", async () => {
+        let snapshot
+        before(async () => {
+            snapshot = await ethers.provider.send("evm_snapshot", [])
+            console.log("\n" + "===========================" + "\n" + 'snapshotStart', snapshot + "\n" + "============================" + "\n")
+        })
+        after(async () => {
+            await ethers.provider.send("evm_revert", [snapshot])
+        })
+        it("Shouldn't update state when first investment", async () => {
 
+            const tx = await staking.connect(accounts.staker).stake(ethers.utils.parseEther("50000"))
+
+
+            expect(await staking.lastRewardBlock())
+                .to
+                .equal(tx.blockNumber)
+
+            expect(await staking.accRewardPerShare())
+                .to
+                .equal(0)
+
+        })
+
+        it("Should distribute rewards correctly", async () => {
+            let tx = await staking.connect(accounts.caller).stake(ethers.utils.parseEther("50000"))
+            let currentBlock = await ethers.provider.getBlockNumber()
+            const blockPassed = 10
+            const accRewardPerShare = await staking.accRewardPerShare()
+            for (let i = currentBlock; i < currentBlock + blockPassed; i++) {
+                await ethers.provider.send("evm_mine", [])
+            }
+
+            tx = await staking.distributeReward()
+            const accReward = await staking.getReward(currentBlock, tx.blockNumber) // qutakvac
+            const totalStaked = await staking.totalStaked()
+            expect(await staking.lastRewardBlock())
+                .to
+                .equal(tx.blockNumber)
+
+
+            expect(await staking.accRewardPerShare())
+                .to
+                .equal(
+                    accRewardPerShare
+                        .add(
+                            accReward
+                                .mul(10 ** 12)
+                                .div(totalStaked)
+                        )
+                )
+
+        })
+    })
+
+    describe("Stake function", async () => {
+        let snapshot
+        before(async () => {
+            snapshot = await ethers.provider.send("evm_snapshot", [])
+            console.log("\n" + "===========================" + "\n" + 'snapshotStart', snapshot + "\n" + "============================" + "\n")
+        })
+        after(async () => {
+            await ethers.provider.send("evm_revert", [snapshot])
+        })
+        it("Should stake first user: ", async () => {
+            const totalStaked = await staking.totalStaked()
+            const caller = await staking.userInfo(accounts.caller.address)
+            const accRewardPerShare = await staking.accRewardPerShare()
+            const stakeAmount = ethers.utils.parseEther("60000")
+
+            await expect(() => staking.connect(accounts.caller).stake(stakeAmount))
+                .to.changeTokenBalances(
+                    token,
+                    [accounts.caller, staking],
+                    [stakeAmount.mul(ethers.constants.NegativeOne), stakeAmount]
+                )
+
+
+            expect(await staking.totalStaked())
+                .to
+                .equal(totalStaked.add(stakeAmount))
+
+            expect((await staking.userInfo(accounts.caller.address)).amount)
+                .to
+                .equal(caller.amount.add(stakeAmount))
+
+            expect((await staking.userInfo(accounts.caller.address)).rewardDebt)
+                .to
+                .equal(caller.amount.mul(accRewardPerShare).div(10 ** 12))
+        })
+
+        it("Should emit event Stake with correct args", async () => {
+            const caller = await staking.userInfo(accounts.caller.address)
+            const stakeAmount = ethers.utils.parseEther("60000")
+            await expect(staking.connect(accounts.staker).stake(stakeAmount))
+                .to
+                .emit(staking, 'Stake')
+                .withArgs(accounts.staker.address, caller.amount);
+        })
+    })
+    describe("Unstake function", async () => {
+        let snapshot
+        before(async () => {
+
+            snapshot = await ethers.provider.send("evm_snapshot", [])
+            console.log("\n" + "===========================" + "\n" + 'snapshotStart', snapshot + "\n" + "============================" + "\n")
+        })
+        after(async () => {
+            await ethers.provider.send("evm_revert", [snapshot])
+        })
+        it("Should reverted with, Staking::bad action", async () => {
+            const stakeAmount = ethers.utils.parseEther("50000")
+            await staking.connect(accounts.caller).stake(stakeAmount)
+            const totalStaked = await staking.totalStaked()
+            const caller = await staking.userInfo(accounts.caller.address)
+            console.log("🚀 ~ file: staking.test.js ~ line 161 ~ it ~ caller", caller.amount.toString())
+            console.log("🚀 ~ file: staking.test.js ~ line 161 ~ it ~ caller", caller.rewardDebt.toString())
+            const accRewardPerShare = await staking.accRewardPerShare()
+
+
+            const stakeAmountBig = ethers.utils.parseEther("600000")
+            await expect(staking.connect(accounts.caller).unStake(stakeAmountBig))
+                .to
+                .be
+                .revertedWith("Staking::bad action")
+
+        })
+        it("Should", async () => {
+            const stakeAmount = ethers.utils.parseEther("50000")
+            const unstakeAmount = ethers.utils.parseEther("50000")
+            const balance = await token.balanceOf(staking.address)
+            console.log("🚀 ~ file: staking.test.js ~ line 84 ~ it ~ balance", balance.toString())
+            await staking.connect(accounts.caller).unStake(unstakeAmount)
+            // await expect(() => staking.connect(accounts.caller).unStake(unstakeAmount))
+            //     .to.changeTokenBalances(
+            //         token,
+            //         [staking, accounts.caller],
+            //         [unstakeAmount.mul(ethers.constants.NegativeOne), unstakeAmount],
+            //     )
+        })
+    })
 })
+
+
+
+/*
+
+let currentBlock = await ethers.provider.getBlockNumber();
+            console.log('currentBlock is: ', currentBlock + "\n")
+
+            let snapshotStart = await ethers.provider.send("evm_snapshot", [])
+
+            for(let i = await ethers.provider.getBlockNumber(); i < 20; i++) {
+                await ethers.provider.send("evm_mine", [])
+            }
+
+            currentBlock = await ethers.provider.getBlockNumber();
+            console.log('currentBlock is: ', currentBlock + "\n")
+
+            await ethers.provider.send("evm_revert", [snapshotStart])
+            currentBlock = await ethers.provider.getBlockNumber();
+            console.log('currentBlock is: ', currentBlock + "\n")
+
+
+*/
+
